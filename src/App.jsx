@@ -24,24 +24,24 @@ function App() {
     setIsLoading(true);
     setError("");
     setRetryCount(0);
-    
+
     try {
       const coachReply = await getGrowResponse(text, true, isOfflineMode); // Pass offline mode flag
       setResponse(coachReply);
       setRetryCount(0);
-      
+
       // Check if response is from automatic fallback (not manual offline mode)
       if (coachReply.includes('[Offline Mode]') && !isOfflineMode) {
         setIsOfflineMode(true);
       }
-      
+
       // Check if response is from Groq API
       if (coachReply.includes('[Groq-Powered Coach]')) {
         console.log('Response from Groq API - ultra fast coaching!');
       }
     } catch (err) {
       console.error('Error getting coach response:', err);
-      
+
       if (err.message.includes('Rate limit exceeded')) {
         setError("🕐 Rate limit exceeded. The app will automatically retry in a moment. Please wait...");
         setRetryCount(prev => prev + 1);
@@ -69,7 +69,7 @@ function App() {
     setError("");
     setResponse("");
     setUserInput("");
-    
+
     // Get the initial coaching question for interactive flow
     const initialQuestion = getInitialQuestion();
     setResponse(initialQuestion.response); // Extract just the response string
@@ -80,7 +80,7 @@ function App() {
     setResponse("");
     setUserInput("");
     setError("");
-    
+
     // If we're in offline mode, show the initial question
     if (isOfflineMode) {
       const initialQuestion = getInitialQuestion();
@@ -99,19 +99,19 @@ function App() {
       <header>
         <h1>🎯 GROW Coaching App</h1>
         <p>Speak your coaching needs and get personalized guidance using the GROW model</p>
-        
+
         <div className="app-controls">
           <button onClick={toggleGrowInfo} className="info-button">
-            {showGrowInfo ? '📖 Hide' : '📖 Show'} GROW Model Info
+            {showGrowInfo ? '📖 Hide' : '📖 Show'} GROW Model
           </button>
           <button onClick={handleForceOfflineMode} className="offline-button">
             🔌 Use Offline Mode
           </button>
+          <button onClick={() => window.location.reload()} className="groq-button" style={{ backgroundColor: '#10b981', color: 'white' }}>
+            🚀 Use AI Groq Mode
+          </button>
           <button onClick={handleResetSession} className="reset-button">
             🔄 Reset Session
-          </button>
-          <button onClick={() => window.location.reload()} className="groq-button" style={{backgroundColor: '#10b981', color: 'white'}}>
-            🚀 Restart with Groq
           </button>
         </div>
 
@@ -136,14 +136,14 @@ function App() {
 
       <main className="coach-container">
         <VoiceInput onTranscript={handleTranscript} />
-        
+
         {userInput && (
           <div className="user-input">
             <h3>Your Input:</h3>
             <p>"{userInput}"</p>
           </div>
         )}
-        
+
         {isLoading && (
           <div className="loading">
             <p>🤔 Your coach is thinking...</p>
@@ -152,7 +152,7 @@ function App() {
             )}
           </div>
         )}
-        
+
         {error && (
           <div className="error">
             <p>❌ {error}</p>
@@ -180,7 +180,7 @@ function App() {
             )}
           </div>
         )}
-        
+
         {response && !isLoading && <CoachResponse response={response} />}
       </main>
 
@@ -190,8 +190,8 @@ function App() {
         </p>
         <p>
           <small>
-            {isOfflineMode 
-              ? "Running in offline mode with local coaching knowledge" 
+            {isOfflineMode
+              ? "Running in offline mode with local coaching knowledge"
               : "Powered by Groq's ultra-fast LLM inference with OpenAI fallback"
             }
           </small>
