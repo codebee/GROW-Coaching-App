@@ -8,16 +8,20 @@ const MIN_REQUEST_INTERVAL = 2000; // 2 seconds between requests
 let localCoachingSession = { 
   step: 0, 
   category: null, 
-  phase: 'goal', 
+  phase: 'intro', // Start with introduction phase
   questionIndex: 0, 
   isComplete: false,
   askedQuestions: {
+    intro: [],
     goal: [],
     reality: [],
     options: [],
     will: []
   },
   userAnalysis: {
+    name: null,
+    background: null,
+    interests: null,
     goalSummary: null,
     realitySummary: null,
     optionsSummary: null,
@@ -248,6 +252,11 @@ function getLocalGrowResponse(userInput) {
   if (coachingResult.analysis) {
     const analysis = coachingResult.analysis;
     
+    // Store personal info from intro phase
+    if (analysis.name) localCoachingSession.userAnalysis.name = analysis.name;
+    if (analysis.background) localCoachingSession.userAnalysis.background = analysis.background;
+    if (analysis.interests) localCoachingSession.userAnalysis.interests = analysis.interests;
+    
     // Store summaries as we progress
     if (analysis.goalSummary) localCoachingSession.userAnalysis.goalSummary = analysis.goalSummary;
     if (analysis.realitySummary) localCoachingSession.userAnalysis.realitySummary = analysis.realitySummary;
@@ -271,16 +280,20 @@ export function resetLocalSession() {
   localCoachingSession = { 
     step: 0, 
     category: null, 
-    phase: 'goal', 
+    phase: 'intro', 
     questionIndex: 0, 
     isComplete: false,
     askedQuestions: {
+      intro: [],
       goal: [],
       reality: [],
       options: [],
       will: []
     },
     userAnalysis: {
+      name: null,
+      background: null,
+      interests: null,
       goalSummary: null,
       realitySummary: null,
       optionsSummary: null,

@@ -229,6 +229,19 @@ When are you going to do it? Will this action meet your goal? What obstacles mig
 
     // Enhanced follow-up questions for deeper coaching
     followUpQuestions: {
+        intro: [
+            "Tell me a bit about yourself - what do you do?",
+            "What kind of things are you passionate about?",
+            "What brings you joy in your daily life?",
+            "Is there anything specific that's been on your mind lately?",
+            "What would you say is your biggest strength?",
+            "If you could change one thing about your current situation, what would it be?",
+            "What's something you're proud of that you've accomplished recently?",
+            "How do you usually approach challenges in your life?",
+            "What motivates you to keep moving forward?",
+            "Tell me about a recent success, big or small!",
+            "What's your favorite way to spend your free time?"
+        ],
         goal: [
             "Is this an END GOAL (your final destination) or a PERFORMANCE GOAL (a milestone)?",
             "Can you make that goal more specific and measurable?",
@@ -314,13 +327,14 @@ export function categorizeInput(userInput) {
 }
 
 // Function to get a coaching response based on session state - Intelligent Interactive approach
-export function getLocalCoachingResponse(userInput, sessionState = { step: 0, category: null, phase: 'goal', questionIndex: 0, askedQuestions: {} }) {
+export function getLocalCoachingResponse(userInput, sessionState = { step: 0, category: null, phase: 'intro', questionIndex: 0, askedQuestions: {} }) {
     const category = sessionState.category || categorizeInput(userInput);
-    const phases = ['goal', 'reality', 'options', 'will'];
-    const currentPhase = sessionState.phase || 'goal';
+    const phases = ['intro', 'goal', 'reality', 'options', 'will'];
+    const currentPhase = sessionState.phase || 'intro';
     
     // Initialize asked questions tracking if not present
     const askedQuestions = sessionState.askedQuestions || {
+        intro: [],
         goal: [],
         reality: [],
         options: [],
@@ -333,11 +347,11 @@ export function getLocalCoachingResponse(userInput, sessionState = { step: 0, ca
     // If user is providing input (not the first interaction), acknowledge it
     let response = "";
     if (sessionState.step > 0 && userInput.trim()) {
-        response = getIntelligentAcknowledgment(userInput, inputAnalysis, currentPhase) + "\n\n";
+        response = getAcknowledgment(userInput, currentPhase, sessionState) + "\n\n";
     }
 
     // Get the next question based on intelligent analysis, avoiding repetition
-    const nextQuestion = getIntelligentNextQuestion(inputAnalysis, currentPhase, category, userInput, askedQuestions);
+    const nextQuestion = getIntelligentNextQuestion(inputAnalysis, currentPhase, category, userInput, askedQuestions, sessionState);
     
     // Debug logging
     console.log(`🤖 Coaching Session Debug:`);
@@ -396,14 +410,15 @@ export function getLocalCoachingResponse(userInput, sessionState = { step: 0, ca
     if (sessionState.step > 0 && userInput.trim() && nextQuestion.isCompletionPrompt) {
         const currentDate = new Date().toLocaleDateString();
         const sessionDuration = Math.ceil(sessionState.step / 2); // Estimate session length
+        const userName = sessionState?.userAnalysis?.name || 'Valued Client';
         
-        response += `\n\n🎉 **Outstanding!** You've completed your GROW coaching session!
+        response += `\n\n🎉 **Outstanding, ${userName}!** You've completed your GROW coaching session!
 
 **📋 COACHING SESSION SUMMARY**
 **Date:** ${currentDate}
 **Session Duration:** ~${sessionDuration} interactions
 **Coach:** AI GROW Coach
-**Coachee:** You
+**Coachee:** ${userName}
 
 ---
 
@@ -466,7 +481,7 @@ export function getLocalCoachingResponse(userInput, sessionState = { step: 0, ca
 - **Ongoing:** Track progress against defined milestones
 
 **🌟 COACH OBSERVATIONS:**
-The client showed excellent engagement with the GROW process, demonstrating clear thinking, creative problem-solving, and strong commitment to action. They are well-positioned for success with their defined goals.
+${userName} showed excellent engagement with the GROW process, demonstrating clear thinking, creative problem-solving, and strong commitment to action. ${userName} is well-positioned for success with their defined goals.
 
 ---
 
@@ -529,31 +544,41 @@ Feel free to start a new coaching session anytime by clicking "Reset Session".`;
 }
 
 // Function to acknowledge user input with appropriate encouragement
-function getAcknowledgment(userInput, phase) {
+function getAcknowledgment(userInput, phase, sessionState = null) {
+    // Get user's name for personalization
+    const userName = sessionState?.userAnalysis?.name || '';
+    const namePrefix = userName ? `${userName}, ` : '';
+    
     const acknowledgments = {
+        intro: [
+            `Nice to meet you${userName ? `, ${userName}` : ''}!`,
+            `Thank you for sharing that${userName ? `, ${userName}` : ''}!`,
+            `That's wonderful${userName ? `, ${userName}` : ''}!`,
+            `I appreciate you telling me that${userName ? `, ${userName}` : ''}!`
+        ],
         goal: [
-            "Great! I can see you have a clear vision of what you want to achieve.",
-            "That's a wonderful goal to work towards.",
-            "I appreciate you sharing that with me - it shows real clarity about your direction.",
-            "That's an excellent goal - I can hear your commitment to it."
+            `${namePrefix}great! I can see you have a clear vision of what you want to achieve.`,
+            `${namePrefix}that's a wonderful goal to work towards.`,
+            `${namePrefix}I appreciate you sharing that with me - it shows real clarity about your direction.`,
+            `${namePrefix}that's an excellent goal - I can hear your commitment to it.`
         ],
         reality: [
-            "Thank you for being so honest about your current situation.",
-            "That's very insightful - understanding where you are now is crucial.",
-            "I appreciate your openness about the reality of your situation.",
-            "That gives me a clear picture of what you're dealing with right now."
+            `${namePrefix}thank you for being so honest about your current situation.`,
+            `${namePrefix}that's very insightful - understanding where you are now is crucial.`,
+            `${namePrefix}I appreciate your openness about the reality of your situation.`,
+            `${namePrefix}that gives me a clear picture of what you're dealing with right now.`
         ],
         options: [
-            "That's a creative option - well done for thinking outside the box!",
-            "Excellent! You're generating some really valuable possibilities.",
-            "I like that approach - it shows you're thinking creatively about solutions.",
-            "That's a solid option to consider."
+            `${namePrefix}that's a creative option - well done for thinking outside the box!`,
+            `${namePrefix}excellent! You're generating some really valuable possibilities.`,
+            `${namePrefix}I like that approach - it shows you're thinking creatively about solutions.`,
+            `${namePrefix}that's a solid option to consider.`
         ],
         will: [
-            "That sounds like a concrete action plan - I can hear your commitment!",
-            "Excellent! You're moving from thinking to doing.",
-            "That's a decisive step forward - well done!",
-            "I can see you're ready to take action on this."
+            `${namePrefix}that sounds like a concrete action plan - I can hear your commitment!`,
+            `${namePrefix}excellent! You're moving from thinking to doing.`,
+            `${namePrefix}that's a decisive step forward - well done!`,
+            `${namePrefix}I can see you're ready to take action on this.`
         ]
     };
 
@@ -693,34 +718,19 @@ This model helps you move from where you are now to where you want to be!
   `;
 }
 
-// Function to get the initial coaching question 🎯 
+// Function to get the initial coaching question 🎯 🌟
 export function getInitialCoachingQuestion() {
     return {
-        response: `**Welcome to your GROW Coaching Session!**
+        response: `**Hello there! Welcome to your personalized coaching session!** 
 
-I'm here to guide you through a structured coaching conversation using the GROW model:
-- **Goal**: What you want to achieve
-- **Reality**: Your current situation  
-- **Options**: What you could do
-- **Will**: What you will do
+I'm your AI coach, and I'm really excited to work with you today! Before we dive into structured coaching, I'd love to get to know you a bit better. This helps me provide more personalized guidance.
 
-Let's start with your GOAL:
+Think of this as a friendly chat to help us connect and understand what's important to you.
 
-What would you like to focus on in our coaching session today? 
-
-Here are some examples to get you thinking:
-• Career development or job change
-• Learning a new skill
-• Improving relationships
-• Health and fitness goals
-• Personal confidence
-• Work-life balance
-• Starting a project
-
-What do you want to achieve or work on?`,
+What should I call you? I'd love to know your name!`,
         nextStep: 0,
         category: 'general',
-        phase: 'goal',
+        phase: 'intro',
         questionIndex: 0,
         isComplete: false
     };
@@ -799,6 +809,9 @@ function analyzeUserInput(userInput, currentPhase, sessionState) {
 
     // Phase-specific analysis
     switch (currentPhase) {
+        case 'intro':
+            analyzeIntroInput(input, analysis, userInput);
+            break;
         case 'goal':
             analyzeGoalInput(input, analysis, userInput);
             break;
@@ -991,6 +1004,164 @@ function extractSupportNeeds(actionText) {
     }
     
     return supportNeeds.length > 0 ? supportNeeds.join(', ') : 'Self-directed approach';
+}
+
+// Analyze intro-phase input to get to know the coachee
+function analyzeIntroInput(input, analysis, originalInput) {
+    const nameIndicators = ['i\'m', 'my name is', 'call me', 'i am'];
+    const professionIndicators = ['work', 'job', 'career', 'profession', 'business', 'student', 'study'];
+    const interestIndicators = ['love', 'enjoy', 'passionate', 'hobby', 'like', 'favorite'];
+    const readinessIndicators = ['ready', 'excited', 'want to start', 'let\'s begin', 'focus on', 'work on'];
+
+    // Extract personal information for building rapport
+    if (nameIndicators.some(indicator => input.includes(indicator))) {
+        analysis.name = extractName(originalInput);
+    }
+    
+    if (professionIndicators.some(indicator => input.includes(indicator))) {
+        analysis.background = extractBackground(originalInput);
+    }
+    
+    if (interestIndicators.some(indicator => input.includes(indicator))) {
+        analysis.interests = extractInterests(originalInput);
+    }
+    
+    // Check if user is ready to move to GROW model
+    if (readinessIndicators.some(indicator => input.includes(indicator)) || 
+        input.length > 100 || // Comprehensive answer suggests readiness
+        analysis.name && analysis.background) { // Got basic info
+        analysis.shouldTransition = true;
+        analysis.suggestedNextPhase = 'goal';
+        analysis.resetQuestionIndex = true;
+    }
+}
+
+// Helper functions to extract personal information
+function extractName(input) {
+    const patterns = [
+        /(?:i'm|my name is|call me|i am)\s+([a-zA-Z]+)/i,
+        /^([a-zA-Z]+)(?:\s|$)/i // First word if it looks like a name
+    ];
+    
+    for (const pattern of patterns) {
+        const match = input.match(pattern);
+        if (match && match[1]) {
+            return match[1].charAt(0).toUpperCase() + match[1].slice(1).toLowerCase();
+        }
+    }
+    return null;
+}
+
+function extractBackground(input) {
+    return input.length > 50 ? input.substring(0, 80) + '...' : input;
+}
+
+function extractInterests(input) {
+    return input.length > 30 ? input.substring(0, 60) + '...' : input;
+}
+
+// Intelligent question selection that avoids repetition and considers user context
+function getIntelligentNextQuestion(inputAnalysis, currentPhase, category, userInput, askedQuestions, sessionState) {
+    const phaseQuestions = growKnowledgeBase.followUpQuestions[currentPhase] || [];
+    const questionsAskedInPhase = askedQuestions[currentPhase] || [];
+    
+    // Get user's name from session state for personalization
+    const userName = sessionState?.userAnalysis?.name || inputAnalysis?.name || '';
+    const namePrefix = userName ? `${userName}, ` : '';
+    
+    // Filter out questions that have already been asked
+    const availableQuestions = phaseQuestions.filter(q => !questionsAskedInPhase.includes(q));
+    
+    // If no questions available or analysis suggests transition, handle appropriately
+    if (availableQuestions.length === 0) {
+        // All questions in this phase have been asked
+        if (currentPhase === 'intro') {
+            return {
+                question: `🎯 ${namePrefix}great! I feel like I'm getting to know you better. Now let's dive into some focused coaching using the GROW model. Let's start with your **GOAL** - what would you like to focus on or achieve through our coaching session today?`,
+                forceNextPhase: 'goal',
+                shouldTransition: true,
+                askedQuestion: null
+            };
+        } else if (currentPhase === 'will') {
+            // Session complete
+            return {
+                question: `🎉 Excellent work, ${namePrefix.toLowerCase()}! You've outlined clear action steps. Now I'd like to create a summary of our session. Could you tell me one key thing you're committed to doing first?`,
+                isCompletionPrompt: true,
+                askedQuestion: null
+            };
+        } else {
+            // Force transition to next phase
+            const phases = ['goal', 'reality', 'options', 'will'];
+            const currentIndex = phases.indexOf(currentPhase);
+            const nextPhase = phases[currentIndex + 1];
+            
+            return {
+                question: `${namePrefix}great insights! Let's move to the next area. ${getPhaseTransitionMessage(nextPhase, userName)}`,
+                forceNextPhase: nextPhase,
+                shouldTransition: true,
+                askedQuestion: null
+            };
+        }
+    }
+    
+    // Select most appropriate question based on analysis
+    let selectedQuestion;
+    
+    if (currentPhase === 'intro') {
+        // For intro, use emotional tone to guide question selection
+        if (inputAnalysis.emotionalTone === 'excited' || inputAnalysis.emotionalTone === 'positive') {
+            selectedQuestion = availableQuestions.find(q => q.includes('passionate') || q.includes('proud') || q.includes('joy')) || availableQuestions[0];
+        } else if (inputAnalysis.emotionalTone === 'uncertain' || inputAnalysis.emotionalTone === 'nervous') {
+            selectedQuestion = availableQuestions.find(q => q.includes('strength') || q.includes('approach challenges')) || availableQuestions[0];
+        } else {
+            selectedQuestion = availableQuestions[0];
+        }
+    } else {
+        // For GROW phases, use existing logic
+        selectedQuestion = availableQuestions[0];
+    }
+    
+    // Add phase context for the first question in each GROW phase with personalization
+    const phaseIntros = {
+        goal: questionsAskedInPhase.length === 0 ? `🎯 ${namePrefix}now let's start by clarifying your **GOAL**:\n\n` : "",
+        reality: questionsAskedInPhase.length === 0 ? `🔍 ${namePrefix}let's explore your current **REALITY**:\n\n` : "",
+        options: questionsAskedInPhase.length === 0 ? `💡 ${namePrefix}time to brainstorm your **OPTIONS**:\n\n` : "",
+        will: questionsAskedInPhase.length === 0 ? `🎯 ${namePrefix}finally, let's create your **WILL/WAY FORWARD**:\n\n` : ""
+    };
+    
+    const intro = phaseIntros[currentPhase] || "";
+    
+    // Personalize the selected question if we have a name
+    let personalizedQuestion = selectedQuestion;
+    if (userName && currentPhase !== 'intro') {
+        // Add name naturally to certain questions
+        if (selectedQuestion.includes('What do you want to achieve')) {
+            personalizedQuestion = selectedQuestion.replace('What do you want to achieve', `${userName}, what do you want to achieve`);
+        } else if (selectedQuestion.includes('What is happening')) {
+            personalizedQuestion = selectedQuestion.replace('What is happening', `${userName}, what is happening`);
+        } else if (selectedQuestion.includes('What options do you have')) {
+            personalizedQuestion = selectedQuestion.replace('What options do you have', `${userName}, what options do you have`);
+        } else if (selectedQuestion.includes('What are you going to do')) {
+            personalizedQuestion = selectedQuestion.replace('What are you going to do', `${userName}, what are you going to do`);
+        }
+    }
+    
+    return {
+        question: intro + personalizedQuestion,
+        shouldTransition: inputAnalysis.shouldTransition || false,
+        askedQuestion: selectedQuestion
+    };
+}
+
+function getPhaseTransitionMessage(nextPhase, userName = '') {
+    const namePrefix = userName ? `${userName}, ` : '';
+    const messages = {
+        goal: `🎯 ${namePrefix}let's clarify your **GOAL** - what do you want to achieve?`,
+        reality: `🔍 ${namePrefix}now let's explore your **REALITY** - what's your current situation?`,
+        options: `💡 ${namePrefix}time to brainstorm **OPTIONS** - what could you do?`,
+        will: `🎯 ${namePrefix}finally, your **WILL/WAY FORWARD** - what will you actually do?`
+    };
+    return messages[nextPhase] || "Let's continue our coaching journey.";
 }
 
 // ...existing code...
