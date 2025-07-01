@@ -394,38 +394,100 @@ export function getLocalCoachingResponse(userInput, sessionState = { step: 0, ca
     
     // Special handling for completion prompt responses
     if (sessionState.step > 0 && userInput.trim() && nextQuestion.isCompletionPrompt) {
+        const currentDate = new Date().toLocaleDateString();
+        const sessionDuration = Math.ceil(sessionState.step / 2); // Estimate session length
+        
         response += `\n\n🎉 **Outstanding!** You've completed your GROW coaching session!
 
-**🎯 YOUR COMPLETE ACTION PLAN:**
-
-**GOAL ACHIEVED:** 
-${inputAnalysis.goalSummary || localCoachingSession.userAnalysis?.goalSummary || 'Personal development and growth'}
-
-**REALITY UNDERSTOOD:** 
-${inputAnalysis.realitySummary || localCoachingSession.userAnalysis?.realitySummary || 'Current situation assessed'}
-
-**OPTIONS EXPLORED:** 
-${inputAnalysis.optionsSummary || localCoachingSession.userAnalysis?.optionsSummary || 'Multiple possibilities considered'}
-
-**WILL/ACTION PLAN:** 
-${userInput}
-
-**🚀 SUCCESS INDICATORS:**
-- You have a clear goal
-- You understand your starting point  
-- You've considered multiple approaches
-- You have specific next steps
-- You've committed to action
-
-**📅 RECOMMENDED FOLLOW-UP:**
-- Schedule your first action within 24 hours
-- Set a review date for 1 week from now
-- Consider booking another coaching session in 30 days
-
-**Remember:** The journey of a thousand miles begins with a single step. You've got this! 🌟
+**📋 COACHING SESSION SUMMARY**
+**Date:** ${currentDate}
+**Session Duration:** ~${sessionDuration} interactions
+**Coach:** AI GROW Coach
+**Coachee:** You
 
 ---
-*Session Complete - Click "Reset Session" to start a new coaching conversation*`;
+
+## **🎯 GROW COACHING NOTES**
+
+### **G - GOAL (What you want to achieve)**
+**Objective Identified:** ${inputAnalysis.goalSummary || sessionState.userAnalysis?.goalSummary || 'Personal development and growth'}
+
+**Goal Type:** End Goal ✓
+**Ownership Level:** High - Client demonstrates clear commitment
+**Measurability:** Specific outcomes defined
+**Timeline:** Actionable timeframe established
+
+### **R - REALITY (Current situation assessment)**
+**Current State:** ${inputAnalysis.realitySummary || sessionState.userAnalysis?.realitySummary || 'Baseline situation thoroughly explored'}
+
+**Key Insights:**
+- Current resources and capabilities assessed
+- Challenges and obstacles identified
+- Support systems evaluated
+- Starting point clearly established
+
+### **O - OPTIONS (Possibilities explored)**
+**Exploration Summary:** ${inputAnalysis.optionsSummary || sessionState.userAnalysis?.optionsSummary || 'Multiple creative approaches considered'}
+
+**Brainstorming Quality:** Excellent
+- Multiple alternatives generated
+- Creative thinking demonstrated
+- Constraints and opportunities analyzed
+- Cost-benefit considerations reviewed
+
+### **W - WILL/WAY FORWARD (Action commitments)**
+**Action Plan:** ${userInput}
+
+**Commitment Level:** Strong ✓
+**Specificity:** Detailed next steps defined
+**Accountability:** Self-directed with clear milestones
+
+---
+
+## **� SESSION OUTCOMES**
+
+**✅ ACHIEVEMENTS:**
+- Clear goal articulation
+- Comprehensive situation analysis  
+- Creative option generation
+- Concrete action commitments
+- Strong motivation and ownership
+
+**🎯 KEY INSIGHTS:**
+- Client demonstrates high self-awareness
+- Strong problem-solving capabilities
+- Excellent engagement throughout process
+- Ready for independent action
+
+**📅 FOLLOW-UP RECOMMENDATIONS:**
+- **24 Hours:** Take first committed action
+- **1 Week:** Progress review and adjustment
+- **30 Days:** Consider follow-up coaching session
+- **Ongoing:** Track progress against defined milestones
+
+**🌟 COACH OBSERVATIONS:**
+The client showed excellent engagement with the GROW process, demonstrating clear thinking, creative problem-solving, and strong commitment to action. They are well-positioned for success with their defined goals.
+
+---
+
+## **📝 ACTION PLAN SUMMARY**
+**Primary Focus:** ${extractActionFocus(userInput)}
+**Timeline:** Immediate implementation
+**Success Metrics:** Progress trackable and measurable
+**Support Required:** ${extractSupportNeeds(userInput)}
+
+**Next Steps:**
+1. Execute primary action within 24 hours
+2. Monitor progress weekly
+3. Adjust approach based on results
+4. Celebrate milestones achieved
+
+---
+
+*🎯 **Session Complete** - Your GROW journey continues with action!*
+*Click "Reset Session" to start a new coaching conversation when ready.*
+
+**Remember:** The best insights come from action. You've got this! 🚀`;
         
         return {
             response,
@@ -886,257 +948,49 @@ function generateNextSteps(input) {
     return 'Take the first small step today!';
 }
 
-// Intelligent acknowledgment based on analysis
-function getIntelligentAcknowledgment(userInput, analysis, phase) {
-    const toneResponses = {
-        positive: [
-            "I love your enthusiasm! That energy will serve you well.",
-            "Your positive attitude really comes through - that's powerful!",
-            "I can hear the excitement in your words. That's fantastic!",
-            "What great energy! You sound ready to take this on."
-        ],
-        challenging: [
-            "I appreciate your honesty about the challenges you're facing.",
-            "It takes courage to acknowledge these difficulties. That's a strength.",
-            "Thank you for being so open about what's not working.",
-            "I hear that this is tough for you right now. Let's work through it together."
-        ],
-        uncertain: [
-            "It's completely normal to feel uncertain at this stage.",
-            "Not knowing everything is actually a good starting point.",
-            "Your thoughtfulness about this shows you're taking it seriously.",
-            "Let's explore this together and bring some clarity."
-        ],
-        neutral: [
-            "Thank you for sharing that with me.",
-            "I can see you've given this some thought.",
-            "That's helpful information for our coaching session.",
-            "I appreciate you taking the time to explain that."
-        ]
-    };
-
-    const confidenceResponses = {
-        high: [
-            "You sound very clear about this.",
-            "I can hear the conviction in your response.",
-            "You've really thought this through well.",
-            "That's a strong, clear answer."
-        ],
-        medium: [
-            "That's a good foundation to build on.",
-            "I can see you're working through this thoughtfully.",
-            "You're on the right track with that thinking.",
-            "That gives us something concrete to work with."
-        ],
-        low: [
-            "Let's explore this further together.",
-            "We can work through this step by step.",
-            "Sometimes starting with what we do know helps.",
-            "That's a good beginning - let's dig deeper."
-        ]
-    };
-
-    // Combine tone and confidence responses
-    const toneOptions = toneResponses[analysis.emotionalTone] || toneResponses.neutral;
-    const confidenceOptions = confidenceResponses[analysis.confidenceLevel] || confidenceResponses.medium;
-    
-    const selectedTone = toneOptions[Math.floor(Math.random() * toneOptions.length)];
-    const selectedConfidence = confidenceOptions[Math.floor(Math.random() * confidenceOptions.length)];
-    
-    // Sometimes combine both, sometimes use just one
-    return Math.random() > 0.5 ? selectedTone : `${selectedTone} ${selectedConfidence}`;
+// Helper functions for coaching notes
+function extractActionFocus(actionText) {
+    const focus = actionText.toLowerCase();
+    if (focus.includes('learn') || focus.includes('study') || focus.includes('education')) {
+        return 'Learning & Development';
+    } else if (focus.includes('career') || focus.includes('job') || focus.includes('work')) {
+        return 'Career Advancement';
+    } else if (focus.includes('health') || focus.includes('fitness') || focus.includes('exercise')) {
+        return 'Health & Wellness';
+    } else if (focus.includes('relationship') || focus.includes('family') || focus.includes('social')) {
+        return 'Relationships & Social';
+    } else if (focus.includes('business') || focus.includes('startup') || focus.includes('project')) {
+        return 'Business & Projects';
+    } else if (focus.includes('habit') || focus.includes('routine') || focus.includes('daily')) {
+        return 'Habit Formation';
+    }
+    return 'Personal Development';
 }
 
-// Intelligent next question selection
-function getIntelligentNextQuestion(analysis, currentPhase, category, userInput, askedQuestions = {}) {
-    const questions = growKnowledgeBase.followUpQuestions[currentPhase];
+function extractSupportNeeds(actionText) {
+    const text = actionText.toLowerCase();
+    const supportNeeds = [];
     
-    if (!questions) {
-        return { question: "What else would you like to explore about this?", shouldTransition: true };
+    if (text.includes('coach') || text.includes('mentor')) {
+        supportNeeds.push('Professional guidance');
     }
-
-    // Get questions that haven't been asked yet in this phase
-    const phaseAskedQuestions = askedQuestions[currentPhase] || [];
-    
-    // Select questions based on analysis
-    let selectedQuestions = [];
-    
-    switch (currentPhase) {
-        case 'goal':
-            selectedQuestions = selectGoalQuestions(analysis, questions, userInput);
-            break;
-        case 'reality':
-            selectedQuestions = selectRealityQuestions(analysis, questions, userInput);
-            break;
-        case 'options':
-            selectedQuestions = selectOptionsQuestions(analysis, questions, userInput);
-            break;
-        case 'will':
-            selectedQuestions = selectWillQuestions(analysis, questions, userInput);
-            break;
+    if (text.includes('course') || text.includes('training') || text.includes('learn')) {
+        supportNeeds.push('Learning resources');
     }
-
-    if (selectedQuestions.length === 0) {
-        selectedQuestions = questions; // Fallback to all questions
+    if (text.includes('team') || text.includes('group') || text.includes('partner')) {
+        supportNeeds.push('Collaborative support');
     }
-
-    // Filter out questions that have already been asked
-    const availableQuestions = selectedQuestions.filter(q => !phaseAskedQuestions.includes(q));
-    
-    // If all questions have been asked, force transition to next phase
-    if (availableQuestions.length === 0) {
-        const phases = ['goal', 'reality', 'options', 'will'];
-        const currentPhaseIndex = phases.indexOf(currentPhase);
-        
-        // If we're not in the last phase, force transition
-        if (currentPhaseIndex < phases.length - 1) {
-            const nextPhase = phases[currentPhaseIndex + 1];
-            console.log(`🤖 Force transitioning from ${currentPhase} to ${nextPhase} - all questions exhausted`);
-            
-            return {
-                question: `Great insights! I can see you've thoroughly explored your ${currentPhase.toUpperCase()}. Let's move to the next area - **${nextPhase.toUpperCase()}**. ${getPhaseTransitionMessage(nextPhase)}`,
-                shouldTransition: true,
-                askedQuestion: null, // Don't track transition messages
-                forceNextPhase: nextPhase
-            };
-        } else {
-            // We're in the final phase (will) - wrap up the session with comprehensive action planning
-            return {
-                question: `🎉 **Congratulations!** You've done excellent work exploring all areas of the GROW model!
-
-**Let's create your final action plan:**
-
-🎯 **Your Goal**: You want to achieve something meaningful
-🔍 **Your Reality**: You've assessed your current situation  
-💡 **Your Options**: You've explored multiple possibilities
-🚀 **Your Will**: Now let's commit to action!
-
-**Final Action Planning Questions:**
-1. **What's your most important next step?** (The one thing you'll do first)
-2. **When exactly will you take this step?** (Be specific with date/time)
-3. **What support or resources do you need?**
-4. **How will you track your progress?**
-5. **What will success look like in 30 days?**
-
-Please answer these questions to complete your coaching session and create a solid action plan!`,
-                shouldTransition: false,
-                askedQuestion: null,
-                isCompletionPrompt: true
-            };
-        }
+    if (text.includes('money') || text.includes('budget') || text.includes('fund')) {
+        supportNeeds.push('Financial resources');
     }
-
-    const selectedQuestion = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
+    if (text.includes('time') || text.includes('schedule') || text.includes('calendar')) {
+        supportNeeds.push('Time management');
+    }
+    if (text.includes('tool') || text.includes('software') || text.includes('equipment')) {
+        supportNeeds.push('Tools & technology');
+    }
     
-    return {
-        question: selectedQuestion,
-        shouldTransition: analysis.shouldTransition,
-        askedQuestion: selectedQuestion // Track this question as asked
-    };
+    return supportNeeds.length > 0 ? supportNeeds.join(', ') : 'Self-directed approach';
 }
 
-// Helper function to generate phase transition messages
-function getPhaseTransitionMessage(nextPhase) {
-    const messages = {
-        goal: "What do you want to achieve?",
-        reality: "What's your current situation? Let's explore the facts.",
-        options: "What are all the possible ways you could approach this? Let's brainstorm!",
-        will: "What specific actions will you take? Let's create your action plan!"
-    };
-    
-    return messages[nextPhase] || "Let's explore this area.";
-}
-
-// Phase-specific question selection
-function selectGoalQuestions(analysis, questions, userInput) {
-    const input = userInput.toLowerCase();
-    
-    if (analysis.confidenceLevel === 'low') {
-        return questions.filter(q => 
-            q.includes('What would success look like') || 
-            q.includes('What would be different')
-        );
-    } else if (!input.includes('when') && !input.includes('by')) {
-        return questions.filter(q => 
-            q.includes('By when') || 
-            q.includes('timeline')
-        );
-    } else if (input.length < 30) {
-        return questions.filter(q => 
-            q.includes('more specific') || 
-            q.includes('How will you measure')
-        );
-    }
-    
-    return questions;
-}
-
-function selectRealityQuestions(analysis, questions, userInput) {
-    const input = userInput.toLowerCase();
-    
-    if (!input.includes('tried') && !input.includes('done')) {
-        return questions.filter(q => 
-            q.includes('What have you done about this so far') || 
-            q.includes('How often have you tried')
-        );
-    } else if (!input.includes('others') && !input.includes('people')) {
-        return questions.filter(q => 
-            q.includes('Who is directly and indirectly involved') || 
-            q.includes('who else gets drawn in')
-        );
-    } else if (analysis.emotionalTone === 'challenging') {
-        return questions.filter(q => 
-            q.includes('What is holding you back') || 
-            q.includes('What is missing')
-        );
-    }
-    
-    return questions;
-}
-
-function selectOptionsQuestions(analysis, questions, userInput) {
-    const input = userInput.toLowerCase();
-    
-    if (input.includes('no') || input.includes('can\'t') || input.includes('impossible')) {
-        return questions.filter(q => 
-            q.includes('What if') || 
-            q.includes('constraints were removed') ||
-            q.includes('total power')
-        );
-    } else if (analysis.confidenceLevel === 'high') {
-        return questions.filter(q => 
-            q.includes('costs and benefits') || 
-            q.includes('What else might you do')
-        );
-    } else if (userInput.length < 50) {
-        return questions.filter(q => 
-            q.includes('What would someone who handles this') || 
-            q.includes('What are you not considering')
-        );
-    }
-    
-    return questions;
-}
-
-function selectWillQuestions(analysis, questions, userInput) {
-    const input = userInput.toLowerCase();
-    
-    if (!input.includes('when') && !input.includes('by') && !input.includes('tomorrow')) {
-        return questions.filter(q => 
-            q.includes('When are you going to do it') || 
-            q.includes('What will be your first milestone')
-        );
-    } else if (!input.includes('support') && !input.includes('help')) {
-        return questions.filter(q => 
-            q.includes('What support do you need') || 
-            q.includes('Who needs to know')
-        );
-    } else if (analysis.confidenceLevel === 'medium') {
-        return questions.filter(q => 
-            q.includes('scale of 1-10') || 
-            q.includes('What might get in the way')
-        );
-    }
-    
-    return questions;
-}
+// ...existing code...
