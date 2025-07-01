@@ -1,8 +1,8 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import VoiceInput from './components/VoiceInput';
 import CoachResponse from './components/CoachResponse';
-import { getGrowResponse, resetLocalSession, getGrowInfo } from './utils/growModel';
+import { getGrowResponse, resetLocalSession, getGrowInfo, getInitialQuestion } from './utils/growModel';
 
 function App() {
   const [response, setResponse] = useState("");
@@ -12,6 +12,12 @@ function App() {
   const [retryCount, setRetryCount] = useState(0);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
   const [showGrowInfo, setShowGrowInfo] = useState(false);
+
+  // Load initial coaching question when app starts
+  useEffect(() => {
+    const initialQuestion = getInitialQuestion();
+    setResponse(initialQuestion.response); // Extract just the response string
+  }, []);
 
   const handleTranscript = async (text) => {
     setUserInput(text);
@@ -28,14 +34,29 @@ function App() {
       if (coachReply.includes('[Offline Mode]') && !isOfflineMode) {
         setIsOfflineMode(true);
       }
+      
+      // Check if response is from Groq API
+      if (coachReply.includes('[Groq-Powered Coach]')) {
+        console.log('Response from Groq API - ultra fast coaching!');
+      }
     } catch (err) {
       console.error('Error getting coach response:', err);
       
       if (err.message.includes('Rate limit exceeded')) {
         setError("🕐 Rate limit exceeded. The app will automatically retry in a moment. Please wait...");
         setRetryCount(prev => prev + 1);
+      } else if (err.message.includes('insufficient_quota')) {
+        setError("💳 OpenAI quota exceeded. Switching to Groq API for better performance and no quota limits!");
+        // Force switch to offline mode temporarily, then reset to use Groq
+        setTimeout(() => {
+          setError("");
+          window.location.reload(); // Refresh to use Groq API
+        }, 3000);
+      } else if (err.message.includes('No API keys')) {
+        setError("🔑 No API keys configured. Please check your .env file. Using offline mode for now.");
+        setIsOfflineMode(true);
       } else {
-        setError(err.message || "Sorry, I couldn't process your request. Please check your internet connection and API key.");
+        setError(err.message || "Sorry, I couldn't process your request. Trying Groq API or offline mode...");
       }
     } finally {
       setIsLoading(false);
@@ -49,14 +70,9 @@ function App() {
     setResponse("");
     setUserInput("");
     
-    // Provide a welcome message for offline mode
-    const welcomeMessage = `🤖 **Offline Mode Activated**
-
-I'm now using the local GROW coaching knowledge base. While I won't have the full conversational capabilities of the AI, I can still guide you through the GROW coaching process effectively.
-
-Please tell me what you'd like to work on today - whether it's career goals, personal development, learning new skills, or any other challenge you're facing.`;
-    
-    setResponse(welcomeMessage);
+    // Get the initial coaching question for interactive flow
+    const initialQuestion = getInitialQuestion();
+    setResponse(initialQuestion.response); // Extract just the response string
   };
 
   const handleResetSession = () => {
@@ -64,7 +80,14 @@ Please tell me what you'd like to work on today - whether it's career goals, per
     setResponse("");
     setUserInput("");
     setError("");
-    setIsOfflineMode(false);
+    
+    // If we're in offline mode, show the initial question
+    if (isOfflineMode) {
+      const initialQuestion = getInitialQuestion();
+      setResponse(initialQuestion.response); // Extract just the response string
+    } else {
+      setIsOfflineMode(false);
+    }
   };
 
   const toggleGrowInfo = () => {
@@ -87,6 +110,9 @@ Please tell me what you'd like to work on today - whether it's career goals, per
           <button onClick={handleResetSession} className="reset-button">
             🔄 Reset Session
           </button>
+          <button onClick={() => window.location.reload()} className="groq-button" style={{backgroundColor: '#10b981', color: 'white'}}>
+            🚀 Restart with Groq
+          </button>
         </div>
 
         {showGrowInfo && (
@@ -102,7 +128,7 @@ Please tell me what you'd like to work on today - whether it's career goals, per
             </div>
           ) : (
             <div className="rate-limit-info">
-              <small>⚡ Rate limited to 1 request per 2 seconds to prevent API limits</small>
+              <small>🚀 <strong>Groq-Powered:</strong> Ultra-fast LLM coaching with OpenAI fallback</small>
             </div>
           )}
         </div>
@@ -135,9 +161,20 @@ Please tell me what you'd like to work on today - whether it's career goals, per
                 <h4>💡 Tips to avoid rate limits:</h4>
                 <ul>
                   <li>Wait at least 2 seconds between requests</li>
+                  <li>Groq API has much higher rate limits than OpenAI</li>
                   <li>Check if you have sufficient API credits</li>
-                  <li>Consider upgrading your OpenAI plan</li>
                   <li>Or use the offline mode button above</li>
+                </ul>
+              </div>
+            )}
+            {error.includes('quota exceeded') && (
+              <div className="quota-tips">
+                <h4>🚀 Great News!</h4>
+                <ul>
+                  <li><strong>Groq API is FREE</strong> with generous limits!</li>
+                  <li>Much faster than OpenAI (sub-second responses)</li>
+                  <li>Perfect for real-time coaching conversations</li>
+                  <li>Your Groq key is already configured - refreshing now...</li>
                 </ul>
               </div>
             )}
@@ -155,7 +192,7 @@ Please tell me what you'd like to work on today - whether it's career goals, per
           <small>
             {isOfflineMode 
               ? "Running in offline mode with local coaching knowledge" 
-              : "Connected to OpenAI API with offline fallback available"
+              : "Powered by Groq's ultra-fast LLM inference with OpenAI fallback"
             }
           </small>
         </p>
