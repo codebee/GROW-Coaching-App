@@ -35,8 +35,8 @@ function App() {
         setIsOfflineMode(true);
       }
 
-      // Check if response is from Groq API
-      if (coachReply.includes('[Groq-Powered Coach]')) {
+      // Log if we're using Groq API (without showing it to user)
+      if (!coachReply.includes('[Offline Mode]') && !isOfflineMode) {
         console.log('Response from Groq API - ultra fast coaching!');
       }
     } catch (err) {
@@ -97,7 +97,7 @@ function App() {
   return (
     <div className="app">
       <header>
-        <h1>🎯 GROW Coaching App</h1>
+        <h1>🎯 Vibes Coaching</h1>
         <p>Speak your coaching needs and get personalized guidance using the GROW model</p>
 
         <div className="app-controls">

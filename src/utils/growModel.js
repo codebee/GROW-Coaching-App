@@ -85,28 +85,15 @@ export async function getGrowResponse(userInput, useLocalFallback = true, isManu
 }
 
 async function getGroqResponse(userInput) {
-  const prompt = `You are a professional GROW model coach with years of experience helping people achieve their goals. The user's input is: "${userInput}"
+  const prompt = `As a professional coach, respond to: "${userInput}"
 
-As a skilled GROW coach, you should:
+Use the GROW model approach:
+- GOAL: Help clarify what they want to achieve
+- REALITY: Explore their current situation  
+- OPTIONS: Generate possibilities
+- WILL: Focus on action commitments
 
-1. **GOAL Phase**: Help define clear, specific, measurable goals
-   - Distinguish between END GOALS (ultimate destination) and PERFORMANCE GOALS (milestones)
-   - Ensure the coachee feels ownership of their goal
-   - Ask: "What do you want to achieve?" "What does success look like?"
-
-2. **REALITY Phase**: Explore current situation objectively
-   - Focus on facts, not opinions or assumptions
-   - Ask: "What's happening right now?" "Who's involved?" "What have you tried?"
-
-3. **OPTIONS Phase**: Generate multiple possibilities
-   - Quantity over quality initially - brainstorm freely
-   - Ask: "What could you do?" "What would someone successful do?" "What if constraints were removed?"
-
-4. **WILL Phase**: Convert discussion into commitment
-   - Focus on concrete actions with timelines
-   - Ask: "What will you do?" "When?" "What support do you need?"
-
-Respond as a warm, encouraging, professional coach. Ask ONE focused question at a time. Acknowledge their input before moving forward. Keep responses conversational and supportive.`;
+Be warm and encouraging. Ask ONE clear question. Keep it concise and conversational.`;
 
   // Rate limiting: ensure minimum time between requests
   const now = Date.now();
@@ -139,11 +126,12 @@ Respond as a warm, encouraging, professional coach. Ask ONE focused question at 
           },
           body: JSON.stringify({
             //model: "mixtral-8x7b-32768", // Fast and capable model
-            model: 'deepseek-r1-distill-llama-70b',
+            // model: 'deepseek-r1-distill-llama-70b',
+            model: "gemma2-9b-it", // Use a compatible model for Groq
             messages: [
               {
                 role: "system",
-                content: "You are a professional GROW model coach. Be warm, encouraging, and ask one focused question at a time."
+                content: "You are a friendly, professional coach using the GROW model. Be warm, concise, and ask one clear question at a time. Keep responses natural and conversational."
               },
               {
                 role: "user", 
@@ -162,7 +150,7 @@ Respond as a warm, encouraging, professional coach. Ask ONE focused question at 
           console.log('Groq API Response received');
           
           if (data.choices && data.choices[0] && data.choices[0].message) {
-            return `🚀 **[Groq-Powered Coach]**\n\n${data.choices[0].message.content}`;
+            return data.choices[0].message.content; // Clean response without prefix
           }
         } else {
           console.log('Groq API failed, trying OpenAI fallback...');
